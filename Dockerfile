@@ -15,7 +15,7 @@ COPY --from=watchman /usr/local/var/run/watchman /usr/local/var/run/watchman
 
 
 WORKDIR /code/
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml poetry.lock blog_posts.db ./
 
 RUN poetry config virtualenvs.create false
 RUN poetry install
