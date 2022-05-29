@@ -52,7 +52,7 @@ def test_create_blog_post(test_db):
     assert response.status_code == 200, response.text
     data = response.json()
     assert data["title"] == "This is an engaging title"
-    assert data["has_foul_language"] is None
+    assert data["has_foul_language"] is False
     expected_paragraphs = [
         "This is the first paragraph. It contains two sentences.",
         "This is the second parapgraph. It contains two more sentences",
@@ -93,7 +93,7 @@ def test_get_blog_post(test_db):
     data = get_response.json()
     assert data["id"] == post_id
     assert data["title"] == "This is an engaging title"
-    assert data["has_foul_language"] is None
+    assert data["has_foul_language"] is False
     assert data["paragraphs"] == [
         "This is the first paragraph. It contains two sentences.",
         "This is the second parapgraph. It contains two more sentences",

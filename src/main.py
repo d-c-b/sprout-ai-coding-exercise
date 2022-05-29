@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from .database import SessionLocal, engine
 from . import models, schemas
-
+import re
+import requests
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -34,6 +35,35 @@ def serialize_blog_post(db_blog_post: models.BlogPost):
     )
 
 
+def check_foul_language(paragraphs: list[str]) -> bool:
+    for paragraph in paragraphs:
+        # get indices of start of each sentence in the paragraph string
+        sentence_start_indices = [0] + list(
+            map(lambda x: x.start() + 1, re.finditer("\. [A-Z]", paragraph))
+        )
+
+        # break paragraph text into chunks based on indices and strip whitespace to get each sentence individually
+        sentences = [
+            sentence.strip()
+            for sentence in [
+                paragraph[i:j]
+                for i, j in zip(
+                    sentence_start_indices, sentence_start_indices[1:] + [None]
+                )
+            ]
+        ]
+
+        for sentence in sentences:
+            res = requests.post(
+                "http://content_model_service:9000/sentences/",
+                json={"fragment": sentence},
+            )
+            if res.json()["hasFoulLanguage"] is True:
+                return True
+
+    return False
+
+
 @app.post("/posts/")
 def create_blog_post(post: schemas.BlogPostCreate, db: Session = Depends(get_db)):
     paragraphs = list(
@@ -42,8 +72,10 @@ def create_blog_post(post: schemas.BlogPostCreate, db: Session = Depends(get_db)
             post.dict()["paragraphs"],
         )
     )
-
-    db_blog_post = models.BlogPost(**dict(post.dict(), paragraphs=paragraphs))
+    has_foul_language = check_foul_language(post.dict()["paragraphs"])
+    db_blog_post = models.BlogPost(
+        **dict(post.dict(), paragraphs=paragraphs, has_foul_language=has_foul_language)
+    )
     db.add(db_blog_post)
     db.commit()
     db.refresh(db_blog_post)
@@ -56,5 +88,3 @@ def get_blog_post(post_id: int, db: Session = Depends(get_db)):
     db_blog_post = db.query(models.BlogPost).get(post_id)
 
     return serialize_blog_post(db_blog_post)
-
-
