@@ -54,12 +54,21 @@ def check_foul_language(paragraphs: list[str]) -> bool:
         ]
 
         for sentence in sentences:
-            res = requests.post(
-                "http://content_model_service:9000/sentences/",
-                json={"fragment": sentence},
-            )
-            if res.json()["hasFoulLanguage"] is True:
-                return True
+            try:
+                res = requests.post(
+                    "http://content_model_service:9000/sentences/",
+                    json={"fragment": sentence},
+                )
+                if res.status_code == 200:
+                    try:
+                        if res.json()["hasFoulLanguage"]:
+                            return True
+                    except KeyError:
+                        return None
+                else:
+                    return None
+            except Exception:
+                return None
 
     return False
 

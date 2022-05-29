@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from src.database import Base
 from src.main import app, get_db, serialize_blog_post
 from src import models
+import requests
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -98,6 +99,32 @@ def test_create_blog_post_with_foul_language(test_db, requests_mock):
     assert db_blog_posts_query.count() == 1
     db_post = db_blog_posts_query.first()
     assert db_post.has_foul_language is True
+
+
+def test_create_blog_post_content_model_service_unavailable(test_db, requests_mock):
+    requests_mock.real_http = True
+
+    # mock call to content model service to return True for having foul language
+    requests_mock.post(
+        "http://content_model_service:9000/sentences/",
+        exc=requests.exceptions.ConnectTimeout,
+        # json={"hasFoulLanguage": True},
+    )
+
+    response = client.post(
+        "/posts/",
+        json=mock_blog_post_body,
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["has_foul_language"] is None
+    db = next(override_get_db())
+    db_blog_posts_query = db.query(models.BlogPost).where(
+        models.BlogPost.title == "This is an engaging title"
+    )
+    assert db_blog_posts_query.count() == 1
+    db_post = db_blog_posts_query.first()
+    assert db_post.has_foul_language is None
 
 
 def test_get_blog_post(test_db):
