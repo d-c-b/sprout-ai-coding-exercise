@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.database import Base
-from src.main import app, get_db
+from src.main import app, get_db, serialize_blog_post
 from src import models
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -98,4 +98,22 @@ def test_get_blog_post(test_db):
         "This is the first paragraph. It contains two sentences.",
         "This is the second parapgraph. It contains two more sentences",
         "Third paraphraph here.",
+    ]
+
+
+def test_serialize_blog_post():
+    blog_post_model = models.BlogPost(
+        title="Another title",
+        has_foul_language=False,
+        paragraphs=[
+            models.Paragraph(text="A first paragraph. Another sentence"),
+            models.Paragraph(text="A second paragraph. And another sentence"),
+        ],
+    )
+    serialized = serialize_blog_post(blog_post_model)
+    assert serialized["title"] == "Another title"
+    assert serialized["has_foul_language"] == False
+    assert serialized["paragraphs"] == [
+        "A first paragraph. Another sentence",
+        "A second paragraph. And another sentence",
     ]
