@@ -8,3 +8,11 @@ services:
       - "8000:80"
     volumes:
       - ./:/code/
+
+  content_model_service:
+    build: ./
+    command: uvicorn src.content_model_service:app --host 0.0.0.0 --port 9000 --reload
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./:/code/

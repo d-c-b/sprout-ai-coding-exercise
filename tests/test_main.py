@@ -112,22 +112,8 @@ def test_serialize_blog_post():
     )
     serialized = serialize_blog_post(blog_post_model)
     assert serialized["title"] == "Another title"
-    assert serialized["has_foul_language"] == False
+    assert serialized["has_foul_language"] is False
     assert serialized["paragraphs"] == [
         "A first paragraph. Another sentence",
         "A second paragraph. And another sentence",
     ]
-
-
-def test_call_content_moderation():
-    response = client.post(
-        "/sentences/",
-        json={
-            "fragment": "This is a test sentence with no foul language",
-        },
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data == {
-        "hasFoulLanguage": False
-    }
