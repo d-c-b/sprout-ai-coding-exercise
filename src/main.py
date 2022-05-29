@@ -39,10 +39,11 @@ def check_foul_language(paragraphs: list[str]) -> bool:
     for paragraph in paragraphs:
         # get indices of start of each sentence in the paragraph string
         sentence_start_indices = [0] + list(
-            map(lambda x: x.start() + 1, re.finditer("\. [A-Z]", paragraph))
+            map(lambda x: x.start() + 1, re.finditer(r"\. [A-Z]", paragraph))
         )
 
-        # break paragraph text into chunks based on indices and strip whitespace to get each sentence individually
+        # break paragraph text into chunks based on indices and strip
+        # whitespace to get each sentence individually
         sentences = [
             sentence.strip()
             for sentence in [
