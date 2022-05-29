@@ -37,9 +37,12 @@ def serialize_blog_post(db_blog_post: models.BlogPost):
 
 @app.post("/posts/")
 def create_blog_post(post: schemas.BlogPostCreate, db: Session = Depends(get_db)):
-    paragraphs = []
-    for paragraph_text in post.dict()["paragraphs"]:
-        paragraphs.append(models.Paragraph(text=paragraph_text))
+    paragraphs = list(
+        map(
+            lambda paragraph_text: models.Paragraph(text=paragraph_text),
+            post.dict()["paragraphs"],
+        )
+    )
 
     db_blog_post = models.BlogPost(**dict(post.dict(), paragraphs=paragraphs))
     db.add(db_blog_post)
