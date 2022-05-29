@@ -72,7 +72,7 @@ def test_create_blog_post(test_db):
 
 
 def test_get_blog_post(test_db):
-    # Create post using the creat post request
+    # Create post using the create post request
     create_response = client.post(
         "/posts/",
         json={
@@ -117,3 +117,17 @@ def test_serialize_blog_post():
         "A first paragraph. Another sentence",
         "A second paragraph. And another sentence",
     ]
+
+
+def test_call_content_moderation():
+    response = client.post(
+        "/sentences/",
+        json={
+            "fragment": "This is a test sentence with no foul language",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data == {
+        "hasFoulLanguage": False
+    }

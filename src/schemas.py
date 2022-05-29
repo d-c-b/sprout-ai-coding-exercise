@@ -27,3 +27,11 @@ class BlogPostCreate(BlogPostBase):
 
 class BlogPost(BlogPostBase):
     has_foul_language: bool | None
+
+
+class SentencesBody(BaseModel):
+    fragment: str
+
+
+class SentencesResponse(BaseModel):
+    hasFoulLanguage: bool

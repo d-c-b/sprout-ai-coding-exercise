@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 
 from .database import SessionLocal, engine
+from .ml_content_model_mock import mocked_ml_model_call
 from . import models, schemas
 
 
@@ -53,3 +54,11 @@ def get_blog_post(post_id: int, db: Session = Depends(get_db)):
     db_blog_post = db.query(models.BlogPost).get(post_id)
 
     return serialize_blog_post(db_blog_post)
+
+
+@app.post("/sentences/", response_model=schemas.SentencesResponse)
+def call_content_moderation(
+    sentences_body: schemas.SentencesBody, db: Session = Depends(get_db)
+):
+    has_foul_language = mocked_ml_model_call(sentences_body.fragment)
+    return {"hasFoulLanguage": has_foul_language}
