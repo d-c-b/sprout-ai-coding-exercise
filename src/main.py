@@ -98,3 +98,19 @@ def get_blog_post(post_id: int, db: Session = Depends(get_db)):
     db_blog_post = db.query(models.BlogPost).get(post_id)
 
     return serialize_blog_post(db_blog_post)
+
+
+@app.post("/retry-unchecked-posts/")
+def retry_unchecked_posts(db: Session = Depends(get_db)):
+    blog_posts_unchecked = db.query(models.BlogPost).where(
+        models.BlogPost.has_foul_language == None
+    )
+    for blog_post in blog_posts_unchecked:
+        paragraphs = list(
+            map(lambda paragraph_model: paragraph_model.text, blog_post.paragraphs)
+        )
+        has_foul_language = check_foul_language(paragraphs)
+        if has_foul_language is not None:
+            blog_post.has_foul_language = has_foul_language
+            db.commit()
+    return {"message": "Retrying unchecked blog posts"}

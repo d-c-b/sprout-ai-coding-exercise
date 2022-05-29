@@ -166,3 +166,24 @@ def test_serialize_blog_post():
         "A first paragraph. Another sentence",
         "A second paragraph. And another sentence",
     ]
+
+
+def test_retry_unchecked_posts(test_db):
+    db = next(override_get_db())
+
+    # Create blog post with has_foul_language = None
+    db_blog_post = models.BlogPost(title="A new title", paragraphs=[models.Paragraph(text="A test paragraph")], has_foul_language=None)
+    db.add(db_blog_post)
+    db.commit()
+
+    db.refresh(db_blog_post)
+
+    assert db_blog_post.has_foul_language is None
+
+    response = client.post(
+        "/retry-unchecked-posts/",
+    )
+    assert response.status_code == 200
+    db.refresh(db_blog_post)
+
+    assert db_blog_post.has_foul_language is False
