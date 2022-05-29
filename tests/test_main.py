@@ -37,17 +37,20 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 
+mock_blog_post_body = {
+    "title": "This is an engaging title",
+    "paragraphs": [
+        "This is the first paragraph. It contains two sentences.",
+        "This is the second parapgraph. It contains two more sentences",
+        "Third paraphraph here.",
+    ],
+}
+
+
 def test_create_blog_post(test_db):
     response = client.post(
         "/posts/",
-        json={
-            "title": "This is an engaging title",
-            "paragraphs": [
-                "This is the first paragraph. It contains two sentences.",
-                "This is the second parapgraph. It contains two more sentences",
-                "Third paraphraph here.",
-            ],
-        },
+        json=mock_blog_post_body,
     )
     assert response.status_code == 200, response.text
     data = response.json()
@@ -71,18 +74,37 @@ def test_create_blog_post(test_db):
     assert list(map(lambda p: p.text, db_post.paragraphs)) == expected_paragraphs
 
 
+def test_create_blog_post_with_foul_language(test_db, requests_mock):
+    requests_mock.real_http = True
+
+    # mock call to content model service to return True for having foul language
+    requests_mock.post(
+        "http://content_model_service:9000/sentences/",
+        json={"hasFoulLanguage": True},
+    )
+
+    response = client.post(
+        "/posts/",
+        json=mock_blog_post_body,
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["title"] == "This is an engaging title"
+    assert data["has_foul_language"] is True
+    db = next(override_get_db())
+    db_blog_posts_query = db.query(models.BlogPost).where(
+        models.BlogPost.title == "This is an engaging title"
+    )
+    assert db_blog_posts_query.count() == 1
+    db_post = db_blog_posts_query.first()
+    assert db_post.has_foul_language is True
+
+
 def test_get_blog_post(test_db):
     # Create post using the create post request
     create_response = client.post(
         "/posts/",
-        json={
-            "title": "This is an engaging title",
-            "paragraphs": [
-                "This is the first paragraph. It contains two sentences.",
-                "This is the second parapgraph. It contains two more sentences",
-                "Third paraphraph here.",
-            ],
-        },
+        json=mock_blog_post_body,
     )
     assert create_response.status_code == 200
     post_id = create_response.json()["id"]
